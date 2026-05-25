@@ -1,0 +1,11 @@
+# Database (auto-created by setup.sh)
+marketing-agent/data/*.db
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
