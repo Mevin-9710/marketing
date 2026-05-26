@@ -1,0 +1,136 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "opentabs": {
+      "type": "remote",
+      "url": "http://127.0.0.1:9515/mcp",
+      "headers": {
+        "Authorization": "Bearer 835cb49f61996805c9db5c9ed483c06831887207e171adefd63914aba8eb430a"
+      }
+    }
+  },
+  "agent": {
+    "ss-outreach": {
+      "description": "Orchestrator for SplitSquad social media outreach — dispatches platform sub-agents in parallel across Reddit, X, Discord, Facebook, HN, IndieHackers, Quora, Bluesky, Substack, uneed.best",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow",
+        "task": "allow"
+      }
+    },
+    "reddit-agent": {
+      "description": "Reddit outreach specialist for SplitSquad — engages in ambient, soft association, and intent modes",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/reddit/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "x-agent": {
+      "description": "X/Twitter outreach specialist for SplitSquad — witty replies, ambient engagement, and soft association",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/x/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "discord-agent": {
+      "description": "Discord outreach specialist for SplitSquad — engages in finance/travel/startup servers",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/discord/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "facebook-agent": {
+      "description": "Facebook outreach specialist for SplitSquad — group-focused engagement across travel/finance/roommate communities",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/facebook/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "hackernews-agent": {
+      "description": "Hacker News outreach specialist for SplitSquad — deep substantive comments on startup/finance threads",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/hackernews/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "indiehackers-agent": {
+      "description": "IndieHackers outreach specialist for SplitSquad — engages with bootstrapper/startup community",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/indiehackers/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "quora-agent": {
+      "description": "Quora outreach specialist for SplitSquad — detailed answers on finance/travel/roommate questions",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/quora/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "bluesky-agent": {
+      "description": "Bluesky outreach specialist for SplitSquad — casual conversational engagement on decentralized social",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/bluesky/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "substack-agent": {
+      "description": "Substack outreach specialist for SplitSquad — engages on newsletters and notes about finance/travel",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/substack/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    },
+    "uneedbest-agent": {
+      "description": "uneed.best outreach specialist for SplitSquad — product discovery platform engagement",
+      "mode": "subagent",
+      "prompt": "{file:./marketing-agent/agents/uneedbest/SKILL.md}",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "opentabs_browser_*": "allow"
+      }
+    }
+  }
+}
