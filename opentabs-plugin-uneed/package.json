@@ -1,0 +1,25 @@
+{
+  "name": "opentabs-plugin-uneed",
+  "version": "1.0.0",
+  "description": "OpenTabs plugin for Uneed — browse community feed, post, comment, like, and interact with the maker community",
+  "keywords": ["opentabs-plugin"],
+  "main": "dist/adapter.iife.js",
+  "type": "module",
+  "opentabs": {
+    "displayName": "Uneed",
+    "description": "OpenTabs plugin for Uneed — browse the community feed, create posts, comment, like, view tool profiles",
+    "urlPatterns": ["*://*.uneed.best/*"]
+  },
+  "scripts": {
+    "build": "tsc && opentabs-plugin build",
+    "dev": "tsc --watch & opentabs-plugin build --watch",
+    "inspect": "opentabs-plugin inspect",
+    "readme": "opentabs-plugin readme"
+  },
+  "devDependencies": {
+    "@opentabs-dev/plugin-tools": "^0.0.109",
+    "@opentabs-dev/plugin-sdk": "^0.0.109",
+    "typescript": "^5.7.0",
+    "zod": "^4.0.0"
+  }
+}
