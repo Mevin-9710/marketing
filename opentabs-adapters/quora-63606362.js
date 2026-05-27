@@ -488,16 +488,24 @@
     return items;
   }
   function isLoggedIn() {
-    const hasLoginButton = document.querySelector('a[href*="login"]');
-    if (hasLoginButton) return false;
-    const hasUserMenu = document.querySelector('[data-testid="header_profile"]');
+    const hasUserMenu = document.querySelector(
+      '[data-testid="header_profile"], .q-image.QuoraIcon, .sessionless, .header_profile_icon, img[class*="profile_photo"], [class*="NavProfile"]'
+    );
     if (hasUserMenu) return true;
+    const loginBtn = document.querySelector(
+      'a[href*="login"][class*="Button"], button[class*="login"], [data-testid="login-button"]'
+    );
+    if (loginBtn && loginBtn.offsetParent !== null) return false;
     const apolloState = getPageGlobal("__APOLLO_STATE__");
     if (apolloState) {
       for (const key of Object.keys(apolloState)) {
         const entry = apolloState[key];
         if (entry?.__typename === "Viewer" && entry.id) return true;
       }
+    }
+    const url2 = getCurrentUrl();
+    if (url2.includes("quora.com") && !url2.includes("/login") && !url2.includes("/signup")) {
+      return true;
     }
     return false;
   }
@@ -16195,7 +16203,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var src_default = new QuoraPlugin();
 
-  // dist/_adapter_entry_1a3edf6c-9f49-4eca-8539-f1efbcb5729e.ts
+  // dist/_adapter_entry_66925532-ad7e-42ed-ad64-f498c76c61f2.ts
   if (!globalThis.__openTabs) {
     globalThis.__openTabs = {};
   } else {
@@ -16413,5 +16421,5 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
     delete src_default.onDeactivate;
   }
-})();(function(){var o=(globalThis).__openTabs;if(o&&o.adapters&&o.adapters["quora"]){var a=o.adapters["quora"];a.__adapterHash="f1f8e613a862fd90ccacb9acc85e298573dee27421e69d6b4760cfbc2e11c8a8";if(a.tools&&Array.isArray(a.tools)){for(var i=0;i<a.tools.length;i++){Object.freeze(a.tools[i]);}Object.freeze(a.tools);}Object.freeze(a);Object.defineProperty(o.adapters,"quora",{value:a,writable:false,configurable:false,enumerable:true});Object.defineProperty(o,"adapters",{value:o.adapters,writable:false,configurable:false});}})();
-//# sourceMappingURL=quora-62d9f8d3.js.map
+})();(function(){var o=(globalThis).__openTabs;if(o&&o.adapters&&o.adapters["quora"]){var a=o.adapters["quora"];a.__adapterHash="00d2428ce4fa53e3b88c6acfe15a6a9593eb415eec1ea4b5319a9326d9c3dba7";if(a.tools&&Array.isArray(a.tools)){for(var i=0;i<a.tools.length;i++){Object.freeze(a.tools[i]);}Object.freeze(a.tools);}Object.freeze(a);Object.defineProperty(o.adapters,"quora",{value:a,writable:false,configurable:false,enumerable:true});Object.defineProperty(o,"adapters",{value:o.adapters,writable:false,configurable:false});}})();
+//# sourceMappingURL=quora-63606362.js.map
