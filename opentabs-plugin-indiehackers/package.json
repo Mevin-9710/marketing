@@ -1,0 +1,25 @@
+{
+  "name": "opentabs-plugin-indiehackers",
+  "version": "1.0.0",
+  "description": "OpenTabs plugin for IndieHackers — browse feed, post, comment, upvote, and interact with the IH community",
+  "keywords": ["opentabs-plugin"],
+  "main": "dist/adapter.iife.js",
+  "type": "module",
+  "opentabs": {
+    "displayName": "IndieHackers",
+    "description": "OpenTabs plugin for IndieHackers — browse the feed, create posts, comment, upvote, view products and user profiles",
+    "urlPatterns": ["*://*.indiehackers.com/*"]
+  },
+  "scripts": {
+    "build": "tsc && opentabs-plugin build",
+    "dev": "tsc --watch & opentabs-plugin build --watch",
+    "inspect": "opentabs-plugin inspect",
+    "readme": "opentabs-plugin readme"
+  },
+  "devDependencies": {
+    "@opentabs-dev/plugin-tools": "^0.0.109",
+    "@opentabs-dev/plugin-sdk": "^0.0.109",
+    "typescript": "^5.7.0",
+    "zod": "^4.0.0"
+  }
+}
