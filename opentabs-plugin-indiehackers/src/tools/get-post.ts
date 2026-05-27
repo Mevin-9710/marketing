@@ -41,15 +41,17 @@ export const getPost = defineTool({
     const body = document.querySelector('.post-page__body.content, [class*="post-body"], [class*="post-content"]')?.textContent?.trim() || '';
     const author = document.querySelector('.post-page__byline-author span, [class*="author"] a, [class*="username"] a')?.textContent?.trim() || '';
 
-    const commentEls = document.querySelectorAll('.embedded-comments .comment, [class*="comment"]');
-    const comments = Array.from(commentEls).map(el => ({
-      body: el.querySelector('.comment__body, [class*="body"]')?.textContent?.trim()
-        || el.querySelector('[class*="content"] p, p')?.textContent?.trim()
-        || '',
-      author: el.querySelector('.comment__author, [class*="author"]')?.textContent?.trim()
-        || el.querySelector('[class*="username"]')?.textContent?.trim()
-        || '',
-    })).filter(c => c.body);
+    const commentEls = document.querySelectorAll('ol.comment-tree > li > .comment');
+    const seen = new Set<string>();
+    const comments = Array.from(commentEls).map(el => {
+      const body = el.querySelector('.comment__content')?.textContent?.trim() || '';
+      const author = el.querySelector('.user-link__name--username')?.textContent?.trim() || '';
+      return { body, author };
+    }).filter(c => {
+      if (!c.body || seen.has(c.body)) return false;
+      seen.add(c.body);
+      return true;
+    });
 
     const votesEl = document.querySelector('.post-liker__count, [class*="vote"], [class*="upvote"]');
     const upvoteCount = parseInt(votesEl?.textContent || '0', 10) || 0;
