@@ -14736,6 +14736,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     output: external_exports.object({
       items: external_exports.array(external_exports.object({
         id: external_exports.number(),
+        url: external_exports.string(),
         body: external_exports.string(),
         author: external_exports.string(),
         likeCount: external_exports.number(),
@@ -14758,6 +14759,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       const posts = await response.json();
       const items = posts.slice(0, limit).map((p) => ({
         id: p.id,
+        url: `/posts/${p.id}`,
         body: (p.body || "").substring(0, 500),
         author: p.author?.display_name || p.author?.username || "unknown",
         likeCount: p.like_count ?? 0,
@@ -15190,7 +15192,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var src_default = new UneedPlugin();
 
-  // dist/_adapter_entry_f4e5cdd4-afee-41b2-9227-55446a98b9be.ts
+  // dist/_adapter_entry_d88f4e5f-e644-4ce0-9d09-acd167ea679f.ts
   if (!globalThis.__openTabs) {
     globalThis.__openTabs = {};
   } else {
@@ -15408,5 +15410,5 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
     delete src_default.onDeactivate;
   }
-})();(function(){var o=(globalThis).__openTabs;if(o&&o.adapters&&o.adapters["uneed"]){var a=o.adapters["uneed"];a.__adapterHash="6ed9a991202556b8aa471c74e9d8b6736cdb2d452224f597dd58e82f519591b9";if(a.tools&&Array.isArray(a.tools)){for(var i=0;i<a.tools.length;i++){Object.freeze(a.tools[i]);}Object.freeze(a.tools);}Object.freeze(a);Object.defineProperty(o.adapters,"uneed",{value:a,writable:false,configurable:false,enumerable:true});Object.defineProperty(o,"adapters",{value:o.adapters,writable:false,configurable:false});}})();
+})();(function(){var o=(globalThis).__openTabs;if(o&&o.adapters&&o.adapters["uneed"]){var a=o.adapters["uneed"];a.__adapterHash="16379a568259a461d923fd93d45275bf417f194886a323b42a7171e07331a840";if(a.tools&&Array.isArray(a.tools)){for(var i=0;i<a.tools.length;i++){Object.freeze(a.tools[i]);}Object.freeze(a.tools);}Object.freeze(a);Object.defineProperty(o.adapters,"uneed",{value:a,writable:false,configurable:false,enumerable:true});Object.defineProperty(o,"adapters",{value:o.adapters,writable:false,configurable:false});}})();
 //# sourceMappingURL=adapter.iife.js.map

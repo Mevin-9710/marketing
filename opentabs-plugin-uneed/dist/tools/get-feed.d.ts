@@ -9,6 +9,7 @@ export declare const getFeed: import("@opentabs-dev/plugin-sdk").ToolDefinition<
 }, z.core.$strip>, z.ZodObject<{
     items: z.ZodArray<z.ZodObject<{
         id: z.ZodNumber;
+        url: z.ZodString;
         body: z.ZodString;
         author: z.ZodString;
         likeCount: z.ZodNumber;

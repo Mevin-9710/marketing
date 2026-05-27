@@ -16,6 +16,7 @@ export const getFeed = defineTool({
   output: z.object({
     items: z.array(z.object({
       id: z.number(),
+      url: z.string(),
       body: z.string(),
       author: z.string(),
       likeCount: z.number(),
@@ -42,6 +43,7 @@ export const getFeed = defineTool({
 
     const items = posts.slice(0, limit).map((p: any) => ({
       id: p.id,
+      url: `/posts/${p.id}`,
       body: (p.body || '').substring(0, 500),
       author: p.author?.display_name || p.author?.username || 'unknown',
       likeCount: p.like_count ?? 0,

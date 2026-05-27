@@ -39,6 +39,9 @@
                 "id": {
                   "type": "number"
                 },
+                "url": {
+                  "type": "string"
+                },
                 "body": {
                   "type": "string"
                 },
@@ -63,6 +66,7 @@
               },
               "required": [
                 "id",
+                "url",
                 "body",
                 "author",
                 "likeCount",
