@@ -14771,6 +14771,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   });
 
   // src/tools/search-tools.ts
+  var API_BASE2 = "https://www.uneed.best/api";
   var searchTools = defineTool({
     name: "search_tools",
     displayName: "Search Tools",
@@ -14793,43 +14794,91 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     }),
     async handle(params) {
       log.info("Searching Uneed", { query: params.query });
-      const searchUrl = `https://www.uneed.best/search?q=${encodeURIComponent(params.query)}`;
-      const response = await fetch(searchUrl, { credentials: "include" });
+      const limit = params.limit ?? 10;
+      const allResults = [];
+      const seen = /* @__PURE__ */ new Set();
+      const response = await fetch(`${API_BASE2}/posts?limit=100&offset=0&sort_by=latest`, { credentials: "include" });
       if (!response.ok) {
         throw ToolError.internal(`Search failed: ${response.status}`);
       }
-      const html = await response.text();
-      const doc = document.createElement("div");
-      doc.innerHTML = html;
-      const results = [];
-      const cards = doc.querySelectorAll('[class*="tool-card"], [class*="product-card"], article, a[href*="/tool/"]');
-      const seen = /* @__PURE__ */ new Set();
-      cards.forEach((el) => {
-        const name = el.querySelector('h2, h3, [class*="name"], [class*="title"]')?.textContent?.trim() || "";
-        if (!name || seen.has(name)) return;
-        seen.add(name);
-        const desc = el.querySelector('p, [class*="description"], [class*="tagline"]')?.textContent?.trim();
-        const link = el.href || el.querySelector("a")?.href || "";
-        const voteText = el.querySelector('[class*="vote"], [class*="score"]')?.textContent?.trim();
-        const voteCount = voteText ? parseInt(voteText.replace(/\D/g, ""), 10) : void 0;
-        const tagEls = el.querySelectorAll('[class*="tag"], [class*="badge"]');
-        const tags = Array.from(tagEls).map((t) => t.textContent?.trim()).filter(Boolean);
-        results.push({ name, description: desc?.substring(0, 300), url: link, voteCount, tags });
-      });
-      if (results.length === 0) {
-        const titleEls = doc.querySelectorAll('h2, h3, [class*="title"]');
-        titleEls.forEach((el) => {
-          const name = el.textContent?.trim() || "";
-          if (!name || seen.has(name) || name.length > 60) return;
-          seen.add(name);
-          const parentLink = el.closest("a");
-          results.push({ name, url: parentLink?.href || "" });
+      const posts = await response.json();
+      const lower = params.query.toLowerCase();
+      for (const p of posts) {
+        const body = (p.body || "").toLowerCase();
+        const author = p.author?.username || "";
+        const name = p.linked_tool?.name || "";
+        if (!body.includes(lower) && !author.includes(lower) && !name.toLowerCase().includes(lower)) continue;
+        if (p.linked_tool?.name && seen.has(p.linked_tool.name)) continue;
+        if (p.linked_tool?.name) seen.add(p.linked_tool.name);
+        if (!p.linked_tool?.name) continue;
+        allResults.push({
+          name: p.linked_tool.name,
+          description: (p.body || "").replace(/<[^>]*>/g, "").substring(0, 300),
+          url: `/tool/${p.linked_tool.slug}`,
+          voteCount: p.linked_tool.votes_sum ?? p.like_count,
+          tags: p.linked_tool.tags?.map((t) => t.name || t) || []
         });
+        if (allResults.length >= limit) break;
       }
-      const limit = params.limit ?? 10;
-      return { results: results.slice(0, limit), total: Math.min(results.length, limit) };
+      if (allResults.length === 0) {
+        for (const p of posts) {
+          const body = (p.body || "").toLowerCase();
+          const author = p.author?.username || "";
+          if (!body.includes(lower) && !author.includes(lower)) continue;
+          allResults.push({
+            name: p.author?.display_name || p.author?.username || "Post",
+            description: (p.body || "").replace(/<[^>]*>/g, "").substring(0, 300),
+            url: `/posts/${p.id}`,
+            voteCount: p.like_count
+          });
+          if (allResults.length >= limit) break;
+        }
+      }
+      return { results: allResults, total: allResults.length };
     }
   });
+
+  // src/nuxt-utils.ts
+  function extractNuxtData(html, ...keys) {
+    const match = html.match(/<script type="application\/json" data-nuxt-data[^>]*>([\s\S]*?)<\/script>/);
+    if (!match) return null;
+    let data;
+    try {
+      data = JSON.parse(match[1]);
+    } catch {
+      return null;
+    }
+    if (!Array.isArray(data) || data.length < 4) return null;
+    const routeData = data[3];
+    if (!routeData || typeof routeData !== "object") return null;
+    for (const key of keys) {
+      if (key in routeData) {
+        const idx = routeData[key];
+        if (typeof idx === "number") {
+          return resolveNuxtRef(data, idx);
+        }
+      }
+    }
+    return null;
+  }
+  function resolveNuxtRef(data, index) {
+    const val = data[index];
+    if (val === null || val === void 0) return val;
+    if (typeof val === "number") return resolveNuxtRef(data, val);
+    if (typeof val === "string" || typeof val === "boolean") return val;
+    if (Array.isArray(val)) {
+      return val.map((v) => typeof v === "number" ? resolveNuxtRef(data, v) : v);
+    }
+    if (typeof val === "object") {
+      const result = {};
+      for (const [k, v] of Object.entries(val)) {
+        if (k === "__ob__" || k === "__v_isRef") continue;
+        result[k] = typeof v === "number" ? resolveNuxtRef(data, v) : v;
+      }
+      return result;
+    }
+    return val;
+  }
 
   // src/tools/get-tool.ts
   var getTool = defineTool({
@@ -14847,24 +14896,50 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       description: external_exports.string().optional(),
       url: external_exports.string().optional(),
       voteCount: external_exports.number().optional(),
+      votesSum: external_exports.number().optional(),
       maker: external_exports.string().optional(),
-      tags: external_exports.array(external_exports.string()).optional()
+      tags: external_exports.array(external_exports.string()).optional(),
+      pricing: external_exports.string().optional(),
+      category: external_exports.string().optional()
     }),
     async handle(params) {
-      if (params.tool_url && !window.location.href.includes("/tool/")) {
-        return { name: "Navigate to the tool page first", description: `Open ${params.tool_url} in your browser, then call get_tool without tool_url.`, url: params.tool_url };
+      let html = "";
+      let toolData = null;
+      if (params.tool_url) {
+        const url2 = params.tool_url.startsWith("http") ? params.tool_url : `https://www.uneed.best${params.tool_url}`;
+        const response = await fetch(url2, { credentials: "include" });
+        if (!response.ok) {
+          throw ToolError.internal(`Failed to load tool page: ${response.status}`);
+        }
+        html = await response.text();
+        const slug = url2.split("/tool/")[1]?.split("?")[0]?.split("#")[0] || "";
+        toolData = extractNuxtData(html, `tool-${slug}`);
+      } else {
+        toolData = {
+          name: document.querySelector("h1")?.textContent?.trim() || document.title.replace(/ — .*$/, "").trim() || "",
+          tagline: document.querySelector('[class*="tagline"], meta[name="description"]')?.textContent?.trim() || document.querySelector('meta[name="description"]')?.content?.split(".")[0],
+          description: document.querySelector('[class*="description"] p, [class*="about"]')?.textContent?.trim() || document.querySelector('meta[name="description"]')?.content,
+          voteCount: void 0,
+          url: window.location.href
+        };
       }
-      const name = document.querySelector("h1")?.textContent?.trim() || document.title.replace(/ — (Marketing|Development|Design|Productivity).*$/, "").trim() || "";
-      const tagline = document.querySelector('[class*="tagline"], meta[name="description"]')?.textContent?.trim() || document.querySelector('meta[name="description"]')?.content?.split(".")[0];
-      const description = document.querySelector('[class*="description"] p, [class*="about"]')?.textContent?.trim() || document.querySelector('meta[name="description"]')?.content;
-      const voteText = document.title.match(/\((\d+)\)/)?.[1] || document.body.textContent?.match(/(\d+)\s*Upvotes?/)?.[1];
-      const voteCount = voteText ? parseInt(voteText, 10) : void 0;
-      const maker = document.body.textContent?.match(/Publisher\s*\n+([^\n]+)/)?.[1]?.trim() || document.querySelector('[class*="maker"], [class*="author"]')?.textContent?.trim();
-      const bodyText = document.body.textContent || "";
-      const tagSection = bodyText.match(/Tags?\s*\n+([^\n]+)/)?.[1] || "";
-      const tags = tagSection.split("#").map((t) => t.trim()).filter(Boolean);
-      log.info("Got tool details", { name });
-      return { name, tagline, description: description?.substring(0, 1e3), url: window.location.href, voteCount, maker, tags: tags.length ? tags : void 0 };
+      if (!toolData) {
+        throw ToolError.notFound("Could not find tool data. Make sure the tool URL is correct.");
+      }
+      const tags = toolData.Tags?.map((t) => t.name || t) || [];
+      log.info("Got tool details", { name: toolData.name });
+      return {
+        name: toolData.name || "",
+        tagline: toolData.description || (typeof toolData.richDescription === "string" ? toolData.richDescription.replace(/<[^>]*>/g, "").substring(0, 200) : void 0),
+        description: typeof toolData.richDescription === "string" ? toolData.richDescription.replace(/<[^>]*>/g, "").substring(0, 1e3) : toolData.description,
+        url: toolData.url || params.tool_url,
+        voteCount: toolData.votesCount ?? toolData.votes_count,
+        votesSum: toolData.votesSum ?? toolData.votes_sum,
+        maker: toolData.author?.username,
+        tags: tags.length ? tags : void 0,
+        pricing: toolData.pricing,
+        category: toolData.category
+      };
     }
   });
 
@@ -14907,7 +14982,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   });
 
   // src/tools/post-comment.ts
-  var API_BASE2 = "https://www.uneed.best/api";
+  var API_BASE3 = "https://www.uneed.best/api";
   var postCommentTool = defineTool({
     name: "post_comment",
     displayName: "Post Comment",
@@ -14925,7 +15000,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     async handle(params) {
       log.info("Posting comment on Uneed");
       if (params.post_id) {
-        const response = await fetch(`${API_BASE2}/posts/${params.post_id}/comments`, {
+        const response = await fetch(`${API_BASE3}/posts/${params.post_id}/comments`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -14986,33 +15061,33 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         throw ToolError.internal(`Failed to load page: ${response.status}`);
       }
       const html = await response.text();
-      const doc = document.createElement("div");
-      doc.innerHTML = html;
       const collections = [];
-      const categoryLinks = doc.querySelectorAll(
-        'a[href*="/category/"], a[href*="/collection/"], [class*="category"] a, footer a'
-      );
       const seen = /* @__PURE__ */ new Set();
-      categoryLinks.forEach((el) => {
-        const anchor = el;
-        const name = anchor.textContent?.trim() || "";
-        const href = anchor.href;
-        if (!name || seen.has(name) || !href.includes("uneed.best")) return;
-        seen.add(name);
-        collections.push({ name, url: href });
-      });
-      if (collections.length === 0) {
-        const text = doc.textContent || "";
-        const categories = text.match(/(CATEGORIES|ALTERNATIVES|BEST TAGS|BEST PRODUCTS)\s*([\s\S]*?)(?=\n\n[A-Z\s]{3,}|$)/);
-        if (categories) {
-          const items = categories[2].split("\n").map((s) => s.trim()).filter(Boolean);
-          items.forEach((name) => {
-            if (name && !seen.has(name) && name.length < 40) {
-              seen.add(name);
-              collections.push({ name });
+      const tagLinks = html.match(/href="\/tags\/([^"]+)"/g);
+      if (tagLinks) {
+        const tagUrls = new Set(tagLinks.map((l) => l.replace('href="', "").replace('"', "")));
+        tagUrls.forEach((url2) => {
+          const name = decodeURIComponent(url2.replace("/tags/", ""));
+          const displayName = name.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+          if (!seen.has(displayName) && displayName.length < 40) {
+            seen.add(displayName);
+            collections.push({ name: displayName, url: url2 });
+          }
+        });
+      }
+      const sections = html.match(/href="\/tool\/([^"]+)">([^<]+)/g);
+      if (sections) {
+        const sectionMap = /* @__PURE__ */ new Map();
+        sections.forEach((match) => {
+          const parts = match.match(/href="\/tool\/([^"]+)">([^<]+)/);
+          if (parts) {
+            const cat = parts[2].trim();
+            if (cat && cat.length < 40 && !seen.has(cat)) {
+              seen.add(cat);
+              collections.push({ name: cat, url: `/tool/${parts[1]}` });
             }
-          });
-        }
+          }
+        });
       }
       const limit = params.limit ?? 10;
       return { collections: collections.slice(0, limit), total: Math.min(collections.length, limit) };
@@ -15038,33 +15113,57 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       toolsSubmitted: external_exports.number().optional()
     }),
     async handle(params) {
-      let displayName = "";
-      let bio = "";
-      let followerCount;
+      let profileData = null;
       let username = params.username || "";
-      if (params.username && !window.location.href.includes("/@")) {
-        const profileUrl = `https://www.uneed.best/@${params.username}`;
+      let displayName = "";
+      if (params.username) {
+        const profileUrl = `https://www.uneed.best/profile/${params.username}`;
         const response = await fetch(profileUrl, { credentials: "include" });
-        if (response.ok) {
-          const html = await response.text();
-          const doc = document.createElement("div");
-          doc.innerHTML = html;
-          displayName = doc.querySelector('h1, [class*="display-name"], [class*="username"]')?.textContent?.trim() || "";
-          bio = doc.querySelector('[class*="bio"], [class*="about"]')?.textContent?.trim() || "";
-          const followerText = doc.querySelector('[class*="followers"]')?.textContent?.trim();
-          followerCount = followerText ? parseInt(followerText.replace(/\D/g, ""), 10) : void 0;
-        } else {
-          return { username, displayName: params.username, bio: "Profile not found" };
+        if (!response.ok) {
+          return { username: params.username, displayName: params.username, bio: `Profile not found (status ${response.status})` };
+        }
+        const html = await response.text();
+        profileData = extractNuxtData(html, `profile-${params.username}`, "profile");
+        if (profileData) {
+          displayName = profileData.display_name || profileData.username || params.username;
+          username = profileData.username || params.username;
         }
       } else {
-        displayName = document.querySelector('h1, [class*="display-name"], [class*="username"]')?.textContent?.trim() || "";
-        bio = document.querySelector('[class*="bio"], [class*="about"]')?.textContent?.trim() || "";
-        const followerText = document.querySelector('[class*="followers"]')?.textContent?.trim();
-        followerCount = followerText ? parseInt(followerText.replace(/\D/g, ""), 10) : void 0;
-        username = username || window.location.pathname.replace("/@", "").replace("/", "") || displayName;
+        const NuxtScript = document.querySelector("script[data-nuxt-data]");
+        if (NuxtScript) {
+          try {
+            const data = JSON.parse(NuxtScript.textContent || "[]");
+            if (Array.isArray(data) && data.length > 3) {
+              const routeData = data[3];
+              if (routeData && typeof routeData === "object") {
+                for (const key of Object.keys(routeData)) {
+                  if (key.startsWith("profile-") || key === "profile") {
+                    profileData = extractNuxtData(NuxtScript.textContent || "", key);
+                    break;
+                  }
+                }
+              }
+            }
+          } catch {
+          }
+        }
+        if (!profileData) {
+          displayName = document.querySelector("h1")?.textContent?.trim() || "";
+          username = window.location.pathname.replace("/profile/", "").replace("/", "") || displayName;
+        }
+      }
+      if (!profileData) {
+        return { username, displayName: displayName || username, bio: "Could not find profile data. Make sure the username is correct." };
       }
       log.info("Got user profile", { username });
-      return { username, displayName, bio, followerCount };
+      return {
+        username: profileData.username || username,
+        displayName: profileData.display_name || profileData.username || username,
+        bio: profileData.bio || "",
+        followerCount: profileData.followers_count ?? profileData.follower_count,
+        followingCount: profileData.following_count,
+        toolsSubmitted: profileData.tools?.length ?? profileData.tool_count
+      };
     }
   });
 
@@ -15091,7 +15190,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   };
   var src_default = new UneedPlugin();
 
-  // dist/_adapter_entry_fafd45b3-4b46-41ae-922c-4b58698cb953.ts
+  // dist/_adapter_entry_f4e5cdd4-afee-41b2-9227-55446a98b9be.ts
   if (!globalThis.__openTabs) {
     globalThis.__openTabs = {};
   } else {
@@ -15309,5 +15408,5 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
     delete src_default.onDeactivate;
   }
-})();(function(){var o=(globalThis).__openTabs;if(o&&o.adapters&&o.adapters["uneed"]){var a=o.adapters["uneed"];a.__adapterHash="12302b32a1824057f121d60cb17642ede80cb61f2cda8a072b15dddcacd92eeb";if(a.tools&&Array.isArray(a.tools)){for(var i=0;i<a.tools.length;i++){Object.freeze(a.tools[i]);}Object.freeze(a.tools);}Object.freeze(a);Object.defineProperty(o.adapters,"uneed",{value:a,writable:false,configurable:false,enumerable:true});Object.defineProperty(o,"adapters",{value:o.adapters,writable:false,configurable:false});}})();
+})();(function(){var o=(globalThis).__openTabs;if(o&&o.adapters&&o.adapters["uneed"]){var a=o.adapters["uneed"];a.__adapterHash="6ed9a991202556b8aa471c74e9d8b6736cdb2d452224f597dd58e82f519591b9";if(a.tools&&Array.isArray(a.tools)){for(var i=0;i<a.tools.length;i++){Object.freeze(a.tools[i]);}Object.freeze(a.tools);}Object.freeze(a);Object.defineProperty(o.adapters,"uneed",{value:a,writable:false,configurable:false,enumerable:true});Object.defineProperty(o,"adapters",{value:o.adapters,writable:false,configurable:false});}})();
 //# sourceMappingURL=adapter.iife.js.map

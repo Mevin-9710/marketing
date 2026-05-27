@@ -24,32 +24,33 @@ export const getCollections = defineTool({
             throw ToolError.internal(`Failed to load page: ${response.status}`);
         }
         const html = await response.text();
-        const doc = document.createElement('div');
-        doc.innerHTML = html;
         const collections = [];
-        const categoryLinks = doc.querySelectorAll('a[href*="/category/"], a[href*="/collection/"], [class*="category"] a, footer a');
         const seen = new Set();
-        categoryLinks.forEach(el => {
-            const anchor = el;
-            const name = anchor.textContent?.trim() || '';
-            const href = anchor.href;
-            if (!name || seen.has(name) || !href.includes('uneed.best'))
-                return;
-            seen.add(name);
-            collections.push({ name, url: href });
-        });
-        if (collections.length === 0) {
-            const text = doc.textContent || '';
-            const categories = text.match(/(CATEGORIES|ALTERNATIVES|BEST TAGS|BEST PRODUCTS)\s*([\s\S]*?)(?=\n\n[A-Z\s]{3,}|$)/);
-            if (categories) {
-                const items = categories[2].split('\n').map((s) => s.trim()).filter(Boolean);
-                items.forEach((name) => {
-                    if (name && !seen.has(name) && name.length < 40) {
-                        seen.add(name);
-                        collections.push({ name });
+        const tagLinks = html.match(/href="\/tags\/([^"]+)"/g);
+        if (tagLinks) {
+            const tagUrls = new Set(tagLinks.map((l) => l.replace('href="', '').replace('"', '')));
+            tagUrls.forEach(url => {
+                const name = decodeURIComponent(url.replace('/tags/', ''));
+                const displayName = name.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                if (!seen.has(displayName) && displayName.length < 40) {
+                    seen.add(displayName);
+                    collections.push({ name: displayName, url });
+                }
+            });
+        }
+        const sections = html.match(/href="\/tool\/([^"]+)">([^<]+)/g);
+        if (sections) {
+            const sectionMap = new Map();
+            sections.forEach((match) => {
+                const parts = match.match(/href="\/tool\/([^"]+)">([^<]+)/);
+                if (parts) {
+                    const cat = parts[2].trim();
+                    if (cat && cat.length < 40 && !seen.has(cat)) {
+                        seen.add(cat);
+                        collections.push({ name: cat, url: `/tool/${parts[1]}` });
                     }
-                });
-            }
+                }
+            });
         }
         const limit = params.limit ?? 10;
         return { collections: collections.slice(0, limit), total: Math.min(collections.length, limit) };

@@ -23,43 +23,54 @@ export const searchTools = defineTool({
     }),
     async handle(params) {
         log.info('Searching Uneed', { query: params.query });
-        const searchUrl = `https://www.uneed.best/search?q=${encodeURIComponent(params.query)}`;
-        const response = await fetch(searchUrl, { credentials: 'include' });
+        const limit = params.limit ?? 10;
+        const allResults = [];
+        const seen = new Set();
+        const response = await fetch(`${API_BASE}/posts?limit=100&offset=0&sort_by=latest`, { credentials: 'include' });
         if (!response.ok) {
             throw ToolError.internal(`Search failed: ${response.status}`);
         }
-        const html = await response.text();
-        const doc = document.createElement('div');
-        doc.innerHTML = html;
-        const results = [];
-        const cards = doc.querySelectorAll('[class*="tool-card"], [class*="product-card"], article, a[href*="/tool/"]');
-        const seen = new Set();
-        cards.forEach(el => {
-            const name = el.querySelector('h2, h3, [class*="name"], [class*="title"]')?.textContent?.trim() || '';
-            if (!name || seen.has(name))
-                return;
-            seen.add(name);
-            const desc = el.querySelector('p, [class*="description"], [class*="tagline"]')?.textContent?.trim();
-            const link = el.href || el.querySelector('a')?.href || '';
-            const voteText = el.querySelector('[class*="vote"], [class*="score"]')?.textContent?.trim();
-            const voteCount = voteText ? parseInt(voteText.replace(/\D/g, ''), 10) : undefined;
-            const tagEls = el.querySelectorAll('[class*="tag"], [class*="badge"]');
-            const tags = Array.from(tagEls).map(t => t.textContent?.trim()).filter(Boolean);
-            results.push({ name, description: desc?.substring(0, 300), url: link, voteCount, tags });
-        });
-        if (results.length === 0) {
-            const titleEls = doc.querySelectorAll('h2, h3, [class*="title"]');
-            titleEls.forEach(el => {
-                const name = el.textContent?.trim() || '';
-                if (!name || seen.has(name) || name.length > 60)
-                    return;
-                seen.add(name);
-                const parentLink = el.closest('a');
-                results.push({ name, url: parentLink?.href || '' });
+        const posts = await response.json();
+        const lower = params.query.toLowerCase();
+        for (const p of posts) {
+            const body = (p.body || '').toLowerCase();
+            const author = p.author?.username || '';
+            const name = p.linked_tool?.name || '';
+            if (!body.includes(lower) && !author.includes(lower) && !name.toLowerCase().includes(lower))
+                continue;
+            if (p.linked_tool?.name && seen.has(p.linked_tool.name))
+                continue;
+            if (p.linked_tool?.name)
+                seen.add(p.linked_tool.name);
+            if (!p.linked_tool?.name)
+                continue;
+            allResults.push({
+                name: p.linked_tool.name,
+                description: (p.body || '').replace(/<[^>]*>/g, '').substring(0, 300),
+                url: `/tool/${p.linked_tool.slug}`,
+                voteCount: p.linked_tool.votes_sum ?? p.like_count,
+                tags: p.linked_tool.tags?.map((t) => t.name || t) || [],
             });
+            if (allResults.length >= limit)
+                break;
         }
-        const limit = params.limit ?? 10;
-        return { results: results.slice(0, limit), total: Math.min(results.length, limit) };
+        if (allResults.length === 0) {
+            for (const p of posts) {
+                const body = (p.body || '').toLowerCase();
+                const author = p.author?.username || '';
+                if (!body.includes(lower) && !author.includes(lower))
+                    continue;
+                allResults.push({
+                    name: p.author?.display_name || p.author?.username || 'Post',
+                    description: (p.body || '').replace(/<[^>]*>/g, '').substring(0, 300),
+                    url: `/posts/${p.id}`,
+                    voteCount: p.like_count,
+                });
+                if (allResults.length >= limit)
+                    break;
+            }
+        }
+        return { results: allResults, total: allResults.length };
     },
 });
 //# sourceMappingURL=search-tools.js.map

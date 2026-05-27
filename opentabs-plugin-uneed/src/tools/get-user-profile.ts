@@ -1,5 +1,6 @@
 import { defineTool, log, ToolError } from '@opentabs-dev/plugin-sdk';
 import { z } from 'zod';
+import { extractNuxtData } from '../nuxt-utils.js';
 
 export const getUserProfile = defineTool({
   name: 'get_user_profile',
@@ -19,34 +20,61 @@ export const getUserProfile = defineTool({
     toolsSubmitted: z.number().optional(),
   }),
   async handle(params) {
-    let displayName = '';
-    let bio = '';
-    let followerCount: number | undefined;
+    let profileData: Record<string, any> | null = null;
     let username = params.username || '';
+    let displayName = '';
 
-    if (params.username && !window.location.href.includes('/@')) {
-      const profileUrl = `https://www.uneed.best/@${params.username}`;
+    if (params.username) {
+      const profileUrl = `https://www.uneed.best/profile/${params.username}`;
       const response = await fetch(profileUrl, { credentials: 'include' });
-      if (response.ok) {
-        const html = await response.text();
-        const doc = document.createElement('div');
-        doc.innerHTML = html;
-        displayName = doc.querySelector('h1, [class*="display-name"], [class*="username"]')?.textContent?.trim() || '';
-        bio = doc.querySelector('[class*="bio"], [class*="about"]')?.textContent?.trim() || '';
-        const followerText = doc.querySelector('[class*="followers"]')?.textContent?.trim();
-        followerCount = followerText ? parseInt(followerText.replace(/\D/g, ''), 10) : undefined;
-      } else {
-        return { username, displayName: params.username, bio: 'Profile not found' };
+      if (!response.ok) {
+        return { username: params.username, displayName: params.username, bio: `Profile not found (status ${response.status})` };
+      }
+      const html = await response.text();
+
+      profileData = extractNuxtData(html, `profile-${params.username}`, 'profile') as Record<string, any> | null;
+
+      if (profileData) {
+        displayName = profileData.display_name || profileData.username || params.username;
+        username = profileData.username || params.username;
       }
     } else {
-      displayName = document.querySelector('h1, [class*="display-name"], [class*="username"]')?.textContent?.trim() || '';
-      bio = document.querySelector('[class*="bio"], [class*="about"]')?.textContent?.trim() || '';
-      const followerText = document.querySelector('[class*="followers"]')?.textContent?.trim();
-      followerCount = followerText ? parseInt(followerText.replace(/\D/g, ''), 10) : undefined;
-      username = username || window.location.pathname.replace('/@', '').replace('/', '') || displayName;
+      const NuxtScript = document.querySelector('script[data-nuxt-data]');
+      if (NuxtScript) {
+        try {
+          const data = JSON.parse(NuxtScript.textContent || '[]');
+          if (Array.isArray(data) && data.length > 3) {
+            const routeData = data[3];
+            if (routeData && typeof routeData === 'object') {
+              for (const key of Object.keys(routeData)) {
+                if (key.startsWith('profile-') || key === 'profile') {
+                  profileData = extractNuxtData(NuxtScript.textContent || '', key) as Record<string, any> | null;
+                  break;
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+
+      if (!profileData) {
+        displayName = document.querySelector('h1')?.textContent?.trim() || '';
+        username = window.location.pathname.replace('/profile/', '').replace('/', '') || displayName;
+      }
+    }
+
+    if (!profileData) {
+      return { username, displayName: displayName || username, bio: 'Could not find profile data. Make sure the username is correct.' };
     }
 
     log.info('Got user profile', { username });
-    return { username, displayName, bio, followerCount };
+    return {
+      username: profileData.username || username,
+      displayName: profileData.display_name || profileData.username || username,
+      bio: profileData.bio || '',
+      followerCount: profileData.followers_count ?? profileData.follower_count,
+      followingCount: profileData.following_count,
+      toolsSubmitted: profileData.tools?.length ?? profileData.tool_count,
+    };
   },
 });

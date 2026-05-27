@@ -187,6 +187,9 @@
           "voteCount": {
             "type": "number"
           },
+          "votesSum": {
+            "type": "number"
+          },
           "maker": {
             "type": "string"
           },
@@ -195,6 +198,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "pricing": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
           }
         },
         "required": [

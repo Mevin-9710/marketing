@@ -1,5 +1,6 @@
 import { defineTool, log, ToolError } from '@opentabs-dev/plugin-sdk';
 import { z } from 'zod';
+import { extractNuxtData } from '../nuxt-utils.js';
 
 export const getTool = defineTool({
   name: 'get_tool',
@@ -16,31 +17,55 @@ export const getTool = defineTool({
     description: z.string().optional(),
     url: z.string().optional(),
     voteCount: z.number().optional(),
+    votesSum: z.number().optional(),
     maker: z.string().optional(),
     tags: z.array(z.string()).optional(),
+    pricing: z.string().optional(),
+    category: z.string().optional(),
   }),
   async handle(params) {
-    if (params.tool_url && !window.location.href.includes('/tool/')) {
-      return { name: 'Navigate to the tool page first', description: `Open ${params.tool_url} in your browser, then call get_tool without tool_url.`, url: params.tool_url };
+    let html = '';
+    let toolData: Record<string, any> | null = null;
+
+    if (params.tool_url) {
+      const url = params.tool_url.startsWith('http') ? params.tool_url : `https://www.uneed.best${params.tool_url}`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) {
+        throw ToolError.internal(`Failed to load tool page: ${response.status}`);
+      }
+      html = await response.text();
+      const slug = url.split('/tool/')[1]?.split('?')[0]?.split('#')[0] || '';
+      toolData = extractNuxtData(html, `tool-${slug}`) as Record<string, any> | null;
+    } else {
+      toolData = {
+        name: document.querySelector('h1')?.textContent?.trim() || document.title.replace(/ — .*$/, '').trim() || '',
+        tagline: document.querySelector('[class*="tagline"], meta[name="description"]')?.textContent?.trim()
+          || (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content?.split('.')[0],
+        description: document.querySelector('[class*="description"] p, [class*="about"]')?.textContent?.trim()
+          || (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content,
+        voteCount: undefined,
+        url: window.location.href,
+      } as any;
     }
 
-    const name = document.querySelector('h1')?.textContent?.trim()
-      || document.title.replace(/ — (Marketing|Development|Design|Productivity).*$/, '').trim() || '';
-    const tagline = document.querySelector('[class*="tagline"], meta[name="description"]')?.textContent?.trim()
-      || (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content?.split('.')[0];
-    const description = document.querySelector('[class*="description"] p, [class*="about"]')?.textContent?.trim()
-      || (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content;
-    const voteText = document.title.match(/\((\d+)\)/)?.[1]
-      || document.body.textContent?.match(/(\d+)\s*Upvotes?/)?.[1];
-    const voteCount = voteText ? parseInt(voteText, 10) : undefined;
-    const maker = document.body.textContent?.match(/Publisher\s*\n+([^\n]+)/)?.[1]?.trim()
-      || document.querySelector('[class*="maker"], [class*="author"]')?.textContent?.trim();
+    if (!toolData) {
+      throw ToolError.notFound('Could not find tool data. Make sure the tool URL is correct.');
+    }
 
-    const bodyText = document.body.textContent || '';
-    const tagSection = bodyText.match(/Tags?\s*\n+([^\n]+)/)?.[1] || '';
-    const tags = tagSection.split('#').map(t => t.trim()).filter(Boolean);
+    const tags = toolData.Tags?.map((t: any) => t.name || t) || [];
 
-    log.info('Got tool details', { name });
-    return { name, tagline, description: description?.substring(0, 1000), url: window.location.href, voteCount, maker, tags: tags.length ? tags : undefined };
+    log.info('Got tool details', { name: toolData.name });
+    return {
+      name: toolData.name || '',
+      tagline: toolData.description || (typeof toolData.richDescription === 'string' ? toolData.richDescription.replace(/<[^>]*>/g, '').substring(0, 200) : undefined),
+      description: typeof toolData.richDescription === 'string' ? toolData.richDescription.replace(/<[^>]*>/g, '').substring(0, 1000) : toolData.description,
+      url: toolData.url || params.tool_url,
+      voteCount: toolData.votesCount ?? toolData.votes_count,
+      votesSum: toolData.votesSum ?? toolData.votes_sum,
+      maker: toolData.author?.username,
+      tags: tags.length ? tags : undefined,
+      pricing: toolData.pricing,
+      category: toolData.category,
+    };
   },
 });
