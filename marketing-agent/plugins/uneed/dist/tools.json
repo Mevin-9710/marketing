@@ -1,0 +1,391 @@
+{
+  "sdkVersion": "0.0.109",
+  "tools": [
+    {
+      "name": "get_feed",
+      "displayName": "Get Community Feed",
+      "description": "Browse the Uneed community feed at uneed.best/community — posts, discussions, and milestones from makers.",
+      "icon": "layout-list",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Maximum items to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "sort": {
+            "description": "Sort order (default: latest)",
+            "type": "string",
+            "enum": [
+              "latest",
+              "hot",
+              "following"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "likeCount": {
+                  "type": "number"
+                },
+                "commentCount": {
+                  "type": "number"
+                },
+                "postType": {
+                  "type": "string"
+                },
+                "linkedTool": {
+                  "type": "string"
+                },
+                "publishedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "url",
+                "body",
+                "author",
+                "likeCount",
+                "commentCount",
+                "postType"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "search_tools",
+      "displayName": "Search Tools",
+      "description": "Search for tools and products on Uneed by keyword.",
+      "icon": "search",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Search keyword or phrase"
+          },
+          "limit": {
+            "description": "Maximum results (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "voteCount": {
+                  "type": "number"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "results",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_tool",
+      "displayName": "Get Tool Details",
+      "description": "Get details about a specific tool/product on Uneed — description, votes, maker, comments.",
+      "icon": "info",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tool_url": {
+            "description": "URL of the tool page. Leave empty if already on it.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "tagline": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "voteCount": {
+            "type": "number"
+          },
+          "votesSum": {
+            "type": "number"
+          },
+          "maker": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pricing": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "upvote_tool",
+      "displayName": "Upvote Tool",
+      "description": "Upvote a tool/product on Uneed. Must be on the tool page.",
+      "icon": "thumbs-up",
+      "group": "Engagement",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tool_url": {
+            "description": "URL of the tool to upvote. Leave empty if already on the page.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "post_comment",
+      "displayName": "Post Comment",
+      "description": "Post a comment on a Uneed community post or tool listing. Provide the post_id for API mode, or navigate to the post first for DOM mode.",
+      "icon": "message-circle",
+      "group": "Engagement",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Comment text"
+          },
+          "post_id": {
+            "description": "Post ID to comment on (API mode). If omitted, uses the current page DOM.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_collections",
+      "displayName": "Get Collections",
+      "description": "Browse tool collections/categories on Uneed — Development, Design, Marketing, etc.",
+      "icon": "grid",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Maximum collections to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "collections",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_profile",
+      "displayName": "Get User Profile",
+      "description": "Get a Uneed user profile — username, bio, follower count, tools submitted.",
+      "icon": "user",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "description": "Username to look up. Leave empty if already on their profile.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "followerCount": {
+            "type": "number"
+          },
+          "followingCount": {
+            "type": "number"
+          },
+          "toolsSubmitted": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,1181 @@
+{
+  "sdkVersion": "0.0.109",
+  "tools": [
+    {
+      "name": "search_questions",
+      "displayName": "Search Questions",
+      "description": "Search for questions on Quora by keyword. Returns a list of matching questions with snippets and URLs.",
+      "icon": "search",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Search keyword or phrase"
+          },
+          "limit": {
+            "description": "Maximum results to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "type": {
+            "description": "Content type to search — questions, answers, or all (default: question)",
+            "type": "string",
+            "enum": [
+              "question",
+              "answer",
+              "all"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "Question title or result headline"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Full URL to the result"
+                },
+                "snippet": {
+                  "description": "Text snippet preview",
+                  "type": "string"
+                },
+                "answerCount": {
+                  "description": "Number of answers (if available)",
+                  "type": "number"
+                },
+                "topic": {
+                  "description": "Topic name if applicable",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of results returned"
+          }
+        },
+        "required": [
+          "results",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_feed",
+      "displayName": "Get Feed",
+      "description": "Get the user's main Quora feed — questions and stories from topics/users the user follows. Returns feed items with titles, previews, and URLs.",
+      "icon": "layout-list",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Maximum feed items to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Feed item ID"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "question",
+                    "answer",
+                    "ad",
+                    "unknown"
+                  ],
+                  "description": "Content type"
+                },
+                "title": {
+                  "description": "Question title or story headline",
+                  "type": "string"
+                },
+                "preview": {
+                  "description": "Text preview snippet",
+                  "type": "string"
+                },
+                "url": {
+                  "description": "URL to the content",
+                  "type": "string"
+                },
+                "author": {
+                  "description": "Author name if applicable",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total items returned"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_question_details",
+      "displayName": "Get Question Details",
+      "description": "Get metadata for the current Quora question page — title, answer count, follower count, topics. Useful for understanding context before answering.",
+      "icon": "info",
+      "group": "Reading",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "found": {
+            "type": "boolean",
+            "description": "Whether a question was detected on the page"
+          },
+          "title": {
+            "description": "The question title",
+            "type": "string"
+          },
+          "url": {
+            "description": "Question URL",
+            "type": "string"
+          },
+          "answer_count": {
+            "description": "Number of answers",
+            "type": "number"
+          },
+          "follower_count": {
+            "description": "Number of followers",
+            "type": "number"
+          },
+          "topic": {
+            "description": "Primary topic if detectable",
+            "type": "string"
+          },
+          "page_title": {
+            "type": "string",
+            "description": "Browser page title"
+          },
+          "current_url": {
+            "type": "string",
+            "description": "Current page URL"
+          }
+        },
+        "required": [
+          "found",
+          "page_title",
+          "current_url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_question_answers",
+      "displayName": "Get Question Answers",
+      "description": "Get answers for a Quora question. Provide a question URL or the tool will read answers from the currently open question page. Returns answers with author, content preview, and upvote counts.",
+      "icon": "messages-square",
+      "group": "Reading",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "question_url": {
+            "description": "Full URL to the Quora question (e.g., https://www.quora.com/What-is-X). Leave empty to use the current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "limit": {
+            "description": "Maximum answers to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "sort": {
+            "description": "Sort order for answers",
+            "type": "string",
+            "enum": [
+              "default",
+              "recent",
+              "upvotes"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "url"
+            ],
+            "additionalProperties": false
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "author_url": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "upvote_count": {
+                  "type": "number"
+                },
+                "timestamp": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "author",
+                "content",
+                "upvote_count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "question",
+          "answers",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "post_answer",
+      "displayName": "Post Answer",
+      "description": "Write and submit an answer to a Quora question. Navigate to the question page first, or provide a question URL. Supports rich text content.",
+      "icon": "pen-square",
+      "group": "Writing",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "question_url": {
+            "description": "URL of the question to answer. Leave empty if already on the question page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Answer content/text. Can include basic formatting."
+          },
+          "is_anonymous": {
+            "description": "Post as anonymous (default: false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "answer_url": {
+            "description": "URL to the posted answer",
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "description": "Status message"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "edit_answer",
+      "displayName": "Edit Answer",
+      "description": "Edit one of your existing Quora answers. Provide the answer ID or navigate to the answer page.",
+      "icon": "edit",
+      "group": "Writing",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "answer_url": {
+            "description": "URL of the answer to edit",
+            "type": "string",
+            "format": "uri"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "New content for the answer"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "upvote_content",
+      "displayName": "Upvote / Downvote",
+      "description": "Upvote or downvote content on Quora (answers, questions). Provide the content URL or target content on the current page. Use action \"upvote\" to upvote, \"downvote\" to downvote, or \"neutral\" to remove your vote.",
+      "icon": "thumbs-up",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "content_url": {
+            "description": "URL of the answer or question to vote on. Leave empty to use current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "upvote",
+              "downvote",
+              "neutral"
+            ],
+            "description": "Vote action: upvote, downvote, or neutral (remove vote)"
+          },
+          "content_type": {
+            "description": "Type of content being voted on",
+            "type": "string",
+            "enum": [
+              "answer",
+              "question"
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "new_count": {
+            "description": "Updated vote count if detectable",
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "follow_question",
+      "displayName": "Follow / Unfollow Question",
+      "description": "Follow or unfollow a Quora question. When you follow a question, you get notified of new answers.",
+      "icon": "bell-plus",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "question_url": {
+            "description": "URL of the question. Leave empty to use the current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "follow",
+              "unfollow"
+            ],
+            "description": "Whether to follow or unfollow"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "follow_topic",
+      "displayName": "Follow / Unfollow Topic",
+      "description": "Follow or unfollow a Quora topic. Requires being on the topic page or providing a topic URL.",
+      "icon": "tag",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "topic_url": {
+            "description": "URL of the topic page. Leave empty to use the current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "topic_name": {
+            "description": "Topic name (alternative to URL). Example: \"Artificial-Intelligence\"",
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "follow",
+              "unfollow"
+            ],
+            "description": "Whether to follow or unfollow"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "follow_user",
+      "displayName": "Follow / Unfollow User",
+      "description": "Follow or unfollow a Quora user. Requires being on their profile page.",
+      "icon": "user-plus",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "profile_url": {
+            "description": "URL of the user profile. Leave empty to use the current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "follow",
+              "unfollow"
+            ],
+            "description": "Whether to follow or unfollow"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_profile",
+      "displayName": "Get User Profile",
+      "description": "Get a Quora user's profile information — display name, bio, follower/following counts, answer/question counts. Provide the profile URL or leave empty for the current user.",
+      "icon": "user",
+      "group": "People",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "profile_url": {
+            "description": "URL of the user profile. Leave empty for the user whose profile page you are on.",
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "follower_count": {
+            "type": "number"
+          },
+          "following_count": {
+            "type": "number"
+          },
+          "answer_count": {
+            "type": "number"
+          },
+          "question_count": {
+            "type": "number"
+          },
+          "profile_image_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "username"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "comment_on_answer",
+      "displayName": "Comment on Answer",
+      "description": "Post a comment on a Quora answer. Navigate to the answer page first or provide the answer URL.",
+      "icon": "message-circle",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "answer_url": {
+            "description": "URL of the answer to comment on. Leave empty to use the current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "description": "Comment text"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bookmark_content",
+      "displayName": "Bookmark / Save",
+      "description": "Bookmark (save) or remove a bookmark from Quora content (answers, questions).",
+      "icon": "bookmark",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "content_url": {
+            "description": "URL of the content to bookmark. Leave empty to use current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "bookmark",
+              "remove"
+            ],
+            "description": "Whether to bookmark or remove bookmark"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "share_content",
+      "displayName": "Share Content",
+      "description": "Share Quora content (questions/answers) by generating a shareable link. Optionally copy to clipboard.",
+      "icon": "share-2",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "content_url": {
+            "description": "URL of the content to share. Leave empty to share the current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "platform": {
+            "description": "Share destination: \"link\" for a direct link, \"copy\" to copy to clipboard, or a social platform (default: link)",
+            "type": "string",
+            "enum": [
+              "link",
+              "twitter",
+              "facebook",
+              "copy"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "share_url": {
+            "type": "string",
+            "description": "The shareable URL"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "share_url",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "request_answer",
+      "displayName": "Request Answer",
+      "description": "Request an answer to a Quora question from specific users. Navigate to the question page first.",
+      "icon": "mail",
+      "group": "Interaction",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "question_url": {
+            "description": "URL of the question. Leave empty to use current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "user_identifier": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Username or profile URL of the person to request an answer from"
+          },
+          "message": {
+            "description": "Optional personal message to include with the request",
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "user_identifier"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_related_questions",
+      "displayName": "Get Related Questions",
+      "description": "Get related/suggested questions for the current question page. Useful for discovering related content.",
+      "icon": "git-branch",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "question_url": {
+            "description": "URL of the question. Leave empty to use current page.",
+            "type": "string",
+            "format": "uri"
+          },
+          "limit": {
+            "description": "Maximum related questions to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "questions",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_topics",
+      "displayName": "Get Topics",
+      "description": "Explore or search topics on Quora. Returns topic names with follower counts and URLs.",
+      "icon": "tags",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "description": "Search term to find specific topics. Leave empty to browse suggested/popular topics.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum topics to return (default 20)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Topic name"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Topic page URL"
+                },
+                "follower_count": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "name",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "topics",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_notifications",
+      "displayName": "Get Notifications",
+      "description": "Get recent Quora notifications — new answers, upvotes, comments, follows, and answer requests.",
+      "icon": "bell",
+      "group": "Account",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "description": "Maximum notifications to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "mark_read": {
+            "description": "Mark retrieved notifications as read (default: false)",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Notification ID"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Notification text/description"
+                },
+                "url": {
+                  "description": "Related content URL",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "Notification type (upvote, answer, comment, follow, etc.)",
+                  "type": "string"
+                },
+                "time": {
+                  "description": "Relative time string",
+                  "type": "string"
+                },
+                "unread": {
+                  "type": "boolean",
+                  "description": "Whether the notification is unread"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "unread"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "unread_count": {
+            "description": "Total unread notification count",
+            "type": "number"
+          }
+        },
+        "required": [
+          "notifications",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_content",
+      "displayName": "Get User Content",
+      "description": "Get a Quora user's answers or questions. Provide the profile URL or the username.",
+      "icon": "file-text",
+      "group": "People",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "profile_url": {
+            "description": "User profile URL. Leave empty for the current user's content.",
+            "type": "string",
+            "format": "uri"
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "answers",
+              "questions"
+            ],
+            "description": "Whether to fetch the user's answers or questions"
+          },
+          "limit": {
+            "description": "Maximum items to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [
+          "content_type"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "Question title (for answers) or question text"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "URL to the content"
+                },
+                "preview": {
+                  "description": "Content snippet/preview",
+                  "type": "string"
+                },
+                "upvote_count": {
+                  "type": "number"
+                },
+                "timestamp": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "username",
+          "items",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_question",
+      "displayName": "Create Question",
+      "description": "Ask a new question on Quora. Provide a title and optional details/topics.",
+      "icon": "help-circle",
+      "group": "Writing",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200,
+            "description": "Question title — should be a clear, specific question"
+          },
+          "details": {
+            "description": "Additional details or context for the question",
+            "type": "string",
+            "maxLength": 5000
+          },
+          "topics": {
+            "description": "Topic names to add (e.g., [\"Artificial-Intelligence\", \"Machine-Learning\"])",
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "is_anonymous": {
+            "description": "Ask anonymously (default: false)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "question_url": {
+            "description": "URL of the created question",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

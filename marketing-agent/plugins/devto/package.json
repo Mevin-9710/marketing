@@ -1,0 +1,25 @@
+{
+  "name": "opentabs-plugin-devto",
+  "version": "1.0.0",
+  "description": "OpenTabs plugin for DEV.to — read articles, write posts, comment, bookmark, and interact with the dev community",
+  "keywords": ["opentabs-plugin"],
+  "main": "dist/adapter.iife.js",
+  "type": "module",
+  "opentabs": {
+    "displayName": "DEV.to",
+    "description": "OpenTabs plugin for DEV.to — browse articles, search by tag, write posts, comment, bookmark, follow users",
+    "urlPatterns": ["*://*.dev.to/*"]
+  },
+  "scripts": {
+    "build": "tsc && opentabs-plugin build",
+    "dev": "tsc --watch & opentabs-plugin build --watch",
+    "inspect": "opentabs-plugin inspect",
+    "readme": "opentabs-plugin readme"
+  },
+  "devDependencies": {
+    "@opentabs-dev/plugin-tools": "^0.0.109",
+    "@opentabs-dev/plugin-sdk": "^0.0.109",
+    "typescript": "^5.7.0",
+    "zod": "^4.0.0"
+  }
+}
