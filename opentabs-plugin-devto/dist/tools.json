@@ -1,0 +1,524 @@
+{
+  "sdkVersion": "0.0.109",
+  "tools": [
+    {
+      "name": "get_feed",
+      "displayName": "Get Feed",
+      "description": "Browse the DEV.to article feed. Returns articles with titles, descriptions, tags, and engagement metrics.",
+      "icon": "layout-list",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "description": "Filter by tag (e.g. \"javascript\", \"python\")",
+            "type": "string"
+          },
+          "top": {
+            "description": "Filter by top posts in N days (e.g. 1, 7, 30, 365)",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "description": "Filter by state: fresh or rising",
+            "type": "string",
+            "enum": [
+              "fresh",
+              "rising"
+            ]
+          },
+          "limit": {
+            "description": "Maximum articles to return (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 40
+          },
+          "page": {
+            "description": "Page number for pagination (default 1)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "commentsCount": {
+                  "type": "number"
+                },
+                "reactionsCount": {
+                  "type": "number"
+                },
+                "readingTime": {
+                  "type": "number"
+                },
+                "publishedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "description",
+                "url",
+                "author",
+                "tags",
+                "commentsCount",
+                "reactionsCount"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "articles",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "search_articles",
+      "displayName": "Search Articles",
+      "description": "Search DEV.to articles by keyword using Algolia search.",
+      "icon": "search",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Search keyword or phrase"
+          },
+          "limit": {
+            "description": "Maximum results (default 10)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reactionsCount": {
+                  "type": "number"
+                },
+                "commentsCount": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "description",
+                "url",
+                "author",
+                "tags",
+                "reactionsCount",
+                "commentsCount"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "results",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_article",
+      "displayName": "Get Article",
+      "description": "Get a full DEV.to article with content and comments. Use an article ID or slug, or be on the article page.",
+      "icon": "file-text",
+      "group": "Reading",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "article_id": {
+            "description": "Article ID or slug. Leave empty if already on the article page.",
+            "type": "string"
+          },
+          "include_comments": {
+            "description": "Whether to include comments (default: true)",
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "readingTime": {
+            "type": "number"
+          },
+          "reactionsCount": {
+            "type": "number"
+          },
+          "commentsCount": {
+            "type": "number"
+          },
+          "bodyPreview": {
+            "type": "string"
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "body": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "body",
+                "author",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "author",
+          "tags",
+          "url",
+          "reactionsCount",
+          "commentsCount",
+          "bodyPreview"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_article",
+      "displayName": "Create Article",
+      "description": "Write and publish a new article on DEV.to. Navigate to dev.to/new first.",
+      "icon": "edit-3",
+      "group": "Writing",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Article title"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Article body in Markdown format"
+          },
+          "tags": {
+            "description": "Up to 4 tags for the article",
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "published": {
+            "description": "Publish immediately (default: true)",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "post_comment",
+      "displayName": "Post Comment",
+      "description": "Post a comment on a DEV.to article. Must be on the article page.",
+      "icon": "message-circle",
+      "group": "Engagement",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Comment text (supports Markdown)"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bookmark_article",
+      "displayName": "Bookmark Article",
+      "description": "Save a DEV.to article to your reading list. Must be on the article page.",
+      "icon": "bookmark",
+      "group": "Engagement",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "follow_user",
+      "displayName": "Follow User",
+      "description": "Follow a user on DEV.to. Must be on their profile page.",
+      "icon": "user-plus",
+      "group": "Engagement",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_profile",
+      "displayName": "Get User Profile",
+      "description": "Get a DEV.to user profile — name, bio, location, website, join date.",
+      "icon": "user",
+      "group": "Discovery",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "description": "DEV.to username to look up"
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "websiteUrl": {
+            "type": "string"
+          },
+          "joinedAt": {
+            "type": "string"
+          },
+          "profileImage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "like_article",
+      "displayName": "Like Article",
+      "description": "Add a Like reaction to a DEV.to article. Must be on the article page.",
+      "icon": "heart",
+      "group": "Engagement",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}
